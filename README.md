@@ -1,8 +1,8 @@
-#Home-Electricity-Management
+# Home-Electricity-Management
 
-##Video Demo:
+## Video Demo:
 
-##Project description:
+## Project description:
 
 For my Cs50x final project, I decided to build a home electricity management system which allows users to track their electricity usage. Users can see their power consumption throughout the month, week and day. Furthermore, it allows them to check and monitor each of their appliances' usage independently. The bill for each month is also generated.
 
