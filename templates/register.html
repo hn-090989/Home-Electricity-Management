@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <div class="page-wrapper">
+        <form action="/register" method="post">
+            <div class="mb-3">
+                <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="name" placeholder="Name" type="text" required>
+            </div>
+            <div class="mb-3">
+                <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="username" placeholder="Username" type="text" required>
+            </div class="mb-3">
+            <div class="mb-3">
+                <input name="password" placeholder="Password" class="form-control mx-auto w-auto"  type="password" required>
+            </div>
+            <div class="mb-3">
+                <input name="confirmation" placeholder="Confirm Password" class="form-control mx-auto w-auto" type="password" required>
+            </div>
+            <div class="mb-3">
+                <input name="email" class="form-control mx-auto w-auto"  placeholder="Email" type="email">
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+    </div>
+    <style>
+        .page-wrapper{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
+        }
+    </style>
+{% endblock %}

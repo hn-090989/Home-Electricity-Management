@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Log In
+{% endblock %}
+
+{% block main %}
+<div class="page-wrapper">
+    <form action="/login" method="post">
+        <div class="mb-3">
+            <input autocomplete="off" autofocus name="username" class="form-control mx-auto w-auto" placeholder="Name" type="text" required>
+        </div>
+        <div class="mb-3">
+            <input name="password" placeholder="Password"  class="form-control mx-auto w-auto" type="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Log In</button>
+    </form>
+</div>
+    <style>
+        .page-wrapper{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
+        }
+    </style>
+{% endblock %}

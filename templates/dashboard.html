@@ -1,0 +1,175 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Dashboard
+{% endblock %}
+
+{% block main %}
+    <div class="page-wrapper">
+        <div class="greeting">Hi {{name}}!</div>
+        <div class="hourly_consumption">
+            <div class="chart-box">
+                <canvas id ="hourly"></canvas>
+            </div>
+            <div class="data">
+                <div> <h1>Total Consumption Today so far</h1> <p>{{ "%.2f"|format(today) }}</p> </div>
+            </div>
+        </div>
+        <div class= "monthly_consumption">
+            <div class="chart-box">
+                <canvas id ="monthly"></canvas>
+            </div>
+            <div class="data">
+                <div> <h1>Total Consumption this Month so far</h1> <p>{{ "%.2f"|format(this_month) }} Units</p></div>
+                <div> <h1>Estimated bill</h1> <p>{{ "%.2f"|format(bill) }} PKR</p> </div>
+                {% if last_month %}
+                <div> <h1>Last month's units</h1> <p>{{ last_month.units }} Units</p> </div>
+                <div> <h1>Last month's bill</h1> <p>{{ last_month.bill }} PKR</p></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="daily_consumption">
+            <div class="chart-box">
+                <canvas id ="daily"></canvas>
+            </div>
+            <div class="data">
+                <div> <h1>Total Consumption this Week so far</h1> <p>{{ "%.2f"|format(this_week) }} Units</p> </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // generating a graph
+        const hourlyGraph = document.getElementById("hourly");
+        const dailyGraph = document.getElementById("daily");
+        const monthlyGraph = document.getElementById("monthly");
+
+        function generate_graph(graphElement, description,x_label){
+            const graph = graphElement.getContext('2d');
+
+            const graphData= {
+                labels: [],
+                datasets: [{
+                    label: "Power Consumed(kWh)",
+                    data: [],
+                    fill: false
+                }]
+            };
+            const config ={
+                type:'line',
+                data: graphData,
+                options: {
+                    scales:{
+                        x:{
+                            title: { display: true, text: x_label }
+                        },
+                        y:{
+                            title: { display : true, text: "Power(kWh)"}
+                        }
+                    },
+                    plugins:{
+                        legend:{
+                            display: false,
+                        },
+                        title: {
+                            display: true,
+                            text: description,
+                            font: { size: 20 }
+                        },
+                    }
+
+                }
+            };
+            return new Chart(graph, config);
+        };
+
+    // updating the graphs
+        async function update_graph(chart, type){
+            try{
+                const res = await fetch(`/get_data?log_type=${type}`);
+                const data = await res.json();
+
+                if(data.data){
+                    chart.data.labels = data.data.map(d => d.time);
+                    chart.data.datasets[0].data = data.data.map(d => d.power);
+                    chart.update();
+                }
+                else {
+                    alert("Unable to generate graph!");
+                }
+
+            }catch (error){
+                alert("Unable to generate graph!");
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", ()=> {
+            const hourlyChart = generate_graph(hourlyGraph, "Power consumed today (kWh)", "Hour");
+            const dailyChart = generate_graph(dailyGraph, "Power consumed this week (kWh)", "month-day hour");
+            const monthlyChart = generate_graph(monthlyGraph, "Power consumed this month (kWh)", "Day");
+
+            update_graph(hourlyChart, "hourly");
+            update_graph(dailyChart,"daily" );
+            update_graph(monthlyChart, "monthly");
+
+            setInterval(() => {
+                update_graph(hourlyChart, "hourly");
+                update_graph(dailyChart, "daily");
+                update_graph(monthlyChart, "monthly");
+            }, 60000);
+        });
+
+    </script>
+
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+
+        .greeting {
+            margin-left: 20px;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: 400;
+        }
+        .page-wrapper{
+            width: 100%;
+            height: 100%;
+            padding: 72px 15px 0px 150px;
+        }
+        .chart-box{
+            width: 100%;
+            height: 450px;
+        }
+        .monthly_consumption,
+        .hourly_consumption,
+        .daily_consumption{
+            display: flex;
+            flex-direction: row;
+            position: relative;
+            padding: 30px 15px 30px 19px;
+            gap: 30px;
+        }
+
+        .data{
+            position: absolute;
+            left: 70%;
+            top: 80px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 390px;
+        }
+        .data h1{
+            font-size: 20px;
+            margin-bottom: 40px;
+            font-weight: 600;
+        }
+        .greeting{
+            font-size: 64px;
+        }
+    </style>
+{% endblock %}

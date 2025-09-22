@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Billing and Costs
+{% endblock %}
+
+{% block main %}
+        <table class="table">
+            <th>Date Billed</th>
+            <th>Units consumed</th>
+            <th>Bill amount</th>
+            <th>Paid</th>
+            {% for bill in bills %}
+                <tr id="{{ bill.id }}">
+                    <td>{{ bill.date_billed }}</td>
+                    <td>{{ "%.2f"|format(bill.power_consumed) }}</td>
+                    <td>{{ "%.2f"|format(bill.bill_amount) }} PKR</td>
+                    {% if bill.paid %}
+                        <td><button disabled class="btn btn-secondary">Paid</button></td>
+                    {% else %}
+                        <td><button onclick="mark_paid(this)" class="btn btn-dark">Mark Paid</button></td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </table>
+
+    <script>
+        async function mark_paid(button){
+            const billID = button.parentElement.parentElement.getAttribute("id");
+
+            try{
+                const res = await fetch(`/mark_paid`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': "application/json"
+                    },
+                    body: JSON.stringify({ billID: billID })
+                });
+                const result = await res.json();
+
+                if(result.success){
+                    button.disabled = true;
+                    button.textContent = "Paid";
+                } else {
+                    alert("Could not mark as paid!!!");
+                }
+            }catch(error){
+                alert("Could not mark as paid!!!");
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .table {
+            position: absolute;
+            left: 230px;
+            top: 60px;
+            bottom: 60px;
+            width: 80%;
+        }
+    </style>
+{% endblock %}

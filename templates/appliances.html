@@ -1,0 +1,460 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Appliance Tracking
+{% endblock %}
+
+{% block main %}
+    <div class="page-wrapper">
+        <div class="overview">
+            <div class="appliances_pie_chart">
+                <canvas id="pie_chart"></canvas>
+            </div>
+
+            <div class="top_appliances">
+                <h1>Top Appliances This Month</h1>
+                <ul>
+                    <li>{{ top_appliances[0].name }} </li>
+                    <li>{{ top_appliances[1].name }} </li>
+                    <li>{{ top_appliances[2].name }} </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="per-appliance-chart">
+
+            <label>Choose appliance </label>
+            <select name="appliance" class="form-select drop_down" onchange="generate_line_graph();">
+                {% for appliance in appliances %}
+                    <option value="{{ appliance.id }}">{{ appliance.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Choose time range </label>
+            <select name="type" class="form-select drop_down" onchange='generate_line_graph();'>
+                <option selected value="monthly">This month</option>
+                <option value="daily">Today</option>
+                <option value="yearly">This year</option>
+            </select>
+
+            <div class="detailed_chart">
+                <canvas id="line_chart"></canvas>
+            </div>
+        </div>
+
+        <div class="appliance_info">
+
+            <h3>List of appliances</h3>
+            <table id="appliances_list" class="table">
+                <th>Appliance ID</th>
+                <th>Name</th>
+                <th>Wattage</th>
+                <th></th>
+                <th></th>
+                {% for appliance in appliances %}
+                    <tr id="{{ appliance.id }}">
+                        <td>{{ appliance.id }}</td>
+                        <td>{{ appliance.name }}</td>
+                        <td>{{ appliance.wattage }}</td>
+                        <td><button id="update_appliance" onclick="get_data(this); show_update_modal(); close_modal();" class="btn btn-secondary">Update</button></td>
+                        <td><button onclick="delete_appliance(this)" class="btn btn-dark">Remove</button></td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <button id="add_button" onclick="show_add_modal();" class="btn btn-light">Add item</button>
+
+            <div class="addmodal">
+                <div class="inner-modal">
+                    <form class="add_appliance" method="post">
+                        <div class="mb-3">
+                            <p>Name</p><input type="text" name="appliance_name"class="form-control w-auto ms-0"  placeholder="Appliance Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <p>Wattage</p><input type="text" name="appliance_wattage" class="form-control w-auto ms-0" placeholder="Wattage">
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Add</button>
+                    </form>
+                    <button onclick='close_modal();' class="btn btn-dark">Cancel</button>
+                </div>
+            </div>
+
+            <div class="updatemodal">
+                <div class="inner-modal">
+                    <form class="update_appliance" method="post">
+                        <div class="mb-3">
+                            <p>Appliance ID</p><input type="text" name="appliance_id" class="form-control w-auto ms-0" placeholder="Appliance ID" required>
+                        </div>
+                        <div class="mb-3">
+                            <p>Name</p><input type="text" name="appliance_name" class="form-control w-auto ms-0" placeholder="Appliance Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <p>Wattage</p><input type="text" name="appliance_wattage" class="form-control w-auto ms-0" placeholder="Wattge" required>
+                        </div>
+                            <button type="submit" class="btn btn-secondary">Save</button>
+                    </form>
+                    <button onclick='close_update_modal()' class="btn btn-dark">Cancel</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+    //code to generate pie chart
+    function generate_pie_chart() {
+            const appliances = {{ monthly_sum | tojson | safe }};
+            const labels = appliances.map(a => a.name);
+            const dataValues = appliances.map(a => a.total_power);
+
+            const colours = [
+                "rgba(255, 99, 132, 0.6)",
+                "rgba(54, 162, 235, 0.6)",
+                "rgba(255, 206, 86, 0.6)",
+                "rgba(75, 192, 192, 0.6)",
+                "rgba(153, 102, 255, 0.6)",
+                "rgba(255, 159, 64, 0.6)",
+                "rgba(199, 199, 199, 0.6)",
+                "rgba(255, 99, 71, 0.6)",
+                "rgba(100, 149, 237, 0.6)",
+                "rgba(60, 179, 113, 0.6)",
+                "rgba(255, 215, 0, 0.6)",
+                "rgba(218, 112, 214, 0.6)",
+                "rgba(70, 130, 180, 0.6)",
+                "rgba(176, 196, 222, 0.6)",
+                "rgba(244, 164, 96, 0.6)",
+                "rgba(46, 139, 87, 0.6)",
+                "rgba(123, 104, 238, 0.6)",
+                "rgba(205, 92, 92, 0.6)",
+                "rgba(32, 178, 170, 0.6)",
+                "rgba(240, 230, 140, 0.6)"
+            ];
+
+            const ctx = document.getElementById('pie_chart').getContext('2d');
+
+            const data = {
+                labels: labels,
+                datasets: [{
+                    label: 'Average Power consumed',
+                    data: dataValues,
+                    backgroundColor: colours.slice(0, dataValues.length),
+                    hoverOffset: 4,
+                }]
+            };
+
+           const config = {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Average Power consumed per Appliance",
+                            font: { size: 25 }
+                        },
+                        legend: {
+                            onClick: (e, legendItem, legend) => {},
+                            position: "bottom"
+                        }
+                    }
+                }
+            };
+
+            if (window.pieChart) {
+                window.pieChart.destroy();
+            }
+            window.pieChart = new Chart(ctx, config);
+        };
+
+        const pieChart = generate_pie_chart();
+
+    //code to generate line graph
+        async function generate_line_graph(event) {
+
+            const appliance = document.querySelector("select[name='appliance']").value;
+            const type = document.querySelector("select[name='type']").value;
+
+            try {
+                const res = await fetch(`/get_appliance_data?appliance=${appliance}&type=${type}`);
+                const result = await res.json();
+
+                if (result.success) {
+
+                    const labels = result.data.map(a => a.label);
+                    const dataValues = result.data.map(a => a.logs);
+
+                    const ctx = document.getElementById('line_chart').getContext('2d');
+
+                    const data = {
+                        labels: labels,
+                        datasets: [{
+                            label: "Power Consumption",
+                            data: dataValues,
+                            fill: false
+                        }]
+                    };
+                    const config = {
+                        type: 'line',
+                        data: data,
+                        options: {
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales:{
+                                x:{
+                                    title: { display: true, text: "Time" }
+                                },
+                                y:{
+                                    title: { display : true, text: "Power(kWh)"}
+                                }
+                             }
+                        }
+
+                    };
+                    if (window.lineGraph) {
+                        window.lineGraph.destroy();
+                    }
+                    window.lineGraph = new Chart(ctx, config);
+
+                } else {
+                    alert("Failed to generate graph!");
+                }
+
+            } catch (error) {
+                alert("Failed to generate graph!!!!");
+                console.log(error);
+            }
+        };
+
+        const lineGraph = generate_line_graph();
+
+    //deleting an appliance
+        async function delete_appliance(appliance) {
+            applianceID = appliance.closest("tr").getAttribute("id");
+
+            try {
+                const res = await fetch(`/delete_appliance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': "application/json"
+                    },
+                    body: JSON.stringify({ applianceID: applianceID })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+
+                    if (confirm("Are you sure you want to delete this appliance?")){
+                        appliance.closest("tr").remove();
+                    }
+
+                } else {
+                    alert("Failed to delete appliance!");
+                }
+
+            } catch (error) {
+                alert("Failed to delete appliance!!");
+                console.log(error);
+            }
+        };
+
+//updating an appliance
+        let replace = null;
+        function get_data(element) {
+            replace = element.closest("tr");
+        }
+
+        function close_update_modal(){
+            replace = null;
+            const modal = document.querySelector('.updatemodal');
+            modal.style.display = 'none';
+        }
+
+        document.querySelector(".update_appliance").addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const applianceID = formData.get("appliance_id");
+            const applianceName = formData.get("appliance_name");
+            const applianceWattage = formData.get("appliance_wattage");
+
+            try {
+                const res = await fetch(`/update_appliance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': "application/json"
+                    },
+                    body: JSON.stringify({applianceName: applianceName, applianceWattage: applianceWattage, applianceID: applianceID})
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    replace.remove();
+
+                    const markup = `<tr id="${applianceID}">
+                                        <td>${applianceID}</td>
+                                        <td>${applianceName}</td>
+                                        <td>${applianceWattage}</td>
+                                        <td><button id="update_appliance" onclick="get_data.call(this); show_update_modal();" class="btn btn-secondary">Update</button></td>
+                                        <td><button onclick="delete_appliance(this)" class="btn btn-dark">Remove</button></td>
+                                    </tr>`;
+                    document.getElementById("appliances_list").insertAdjacentHTML("beforeend", markup);
+                    close_update_modal();
+
+                } else {
+                    alert("Failed to update appliance!");
+                }
+            } catch (error) {
+                alert("Failed to update appliance!!!");
+                console.log(error);
+            }
+
+        });
+
+    //adding an appliance
+        function close_modal(){
+            const modal = document.querySelector('.addmodal');
+            modal.style.display = 'none';
+        };
+        document.querySelector('.add_appliance').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const applianceName = formData.get("appliance_name");
+            const applianceWattage = formData.get("appliance_wattage") || null;
+
+            try {
+                const res = await fetch(`/add_appliance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': "application/json"
+                    },
+                    body: JSON.stringify({ applianceName: applianceName, applianceWattage: applianceWattage })
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    let markup;
+                    if (applianceWattage) {
+                        markup = `<tr id="${result.applianceID}">
+                                    <td>${result.applianceID}</td>
+                                    <td>${applianceName}</td>
+                                    <td>${applianceWattage}</td>
+                                    <td><button id="update_appliance" onclick="get_data(this); show_update_modal();" class="btn btn-secondary">Update</button></td>
+                                    <td><button onclick="delete_appliance(this)" class="btn btn-dark">Remove</button></td>
+                                </tr>`;
+                    } else {
+                       markup = `<tr id="${result.applianceID}">
+                                    <td>${result.applianceID}</td>
+                                    <td>${applianceName}</td>
+                                    <td></td>
+                                    <td><button id="update_appliance" onclick="get_data(this); show_update_modal();" class="btn btn-secondary">Update</button></td>
+                                    <td><button onclick="delete_appliance(this)" class="btn btn-dark">Remove</button></td>
+                                </tr>`;
+                    }
+                    document.getElementById("appliances_list").insertAdjacentHTML("beforeend", markup);
+
+                    event.target.reset();
+                    close_modal();
+                } else {
+                    alert("Failed to add appliance!");
+                }
+            } catch (error) {
+                alert("Failed to add appliance!!");
+                console.log(error)
+            }
+        });
+        function show_add_modal(){
+            const modal = document.querySelector('.addmodal');
+            modal.style.display = 'block';
+        };
+        function show_update_modal(){
+            const modal = document.querySelector('.updatemodal');
+            modal.style.display = 'block';
+        };
+
+    </script>
+    <style>
+        *{
+            margin: 0px;
+            padding: 0px;
+        }
+        .addmodal{
+            display: none;
+        }
+        .updatemodal{
+            display: none;
+        }
+        .overview{
+            width: 100%;
+            position: relative;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+        .page-wrapper{
+            width: 100%;
+            height: 100%;
+            padding: 52px 20px 80px 190px;
+            position: relative;
+        }
+        .appliances_pie_chart{
+            width: 600px;
+            height: 100%;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 200;
+        }
+        .per_applaince_chart{
+            padding: 30px;
+        }
+        .appliance_info{
+            margin-top: 50px;
+            margin-bottom: 50px;
+            font-weight: 600;
+        }
+        .appliance_info h3{
+            font-size: 40px;
+        }
+        .top_appliances ul{
+            list-style: none;
+        }
+        .drop_down{
+            width: 200px;
+        }
+        .detailed_chart{
+            padding: 30px;
+        }
+        .top_appliances {
+            position: absolute;
+            right: 110px;
+            top: 90px;
+            width: 450px;
+            height: 400px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .top_appliances h1 {
+            font-size: 20px;
+            margin-bottom: 40px;
+            font-weight: 600;
+        }
+        .top_appliances li {
+            height: 40px;
+            background: #f9f9f9;
+            margin: 18px 15px;
+            padding: 8px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .appliances_list li{
+            font-weight: 200px;
+        }
+    </style>
+{% endblock %}
