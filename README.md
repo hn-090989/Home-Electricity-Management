@@ -41,6 +41,7 @@ This is the Python file that was used to create the dummy data used to show the 
 This code defines a Flask decorator called login_required that ensures a user is logged in before accessing certain routes. login_required is a decorator function that takes a function f as input. It checks if the user is logged in. If the user is logged in, it runs the original function present below the route. If not, it returns a decorated function.
 
 **Improvements**
+
 In the future, I hope to continue refining this project. I want to add machine learning that predicts the users' monthly bill and units based on past trends. Additionally, I’d like to integrate hardware components. Finally, I’d like the bills to be generated automatically in the background. Currently, the bills only generate once the user logs into the website.
 
 
