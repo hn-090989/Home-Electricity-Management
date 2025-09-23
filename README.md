@@ -1,6 +1,6 @@
 # Home-Electricity-Management
 
-## Video Demo:
+## Video Demo: https://youtu.be/eVfRxglNMYs
 
 ## Project description:
 
